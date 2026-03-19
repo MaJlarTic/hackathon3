@@ -379,6 +379,8 @@ function createWindow() {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
         .calendar-header-left {
@@ -408,6 +410,34 @@ function createWindow() {
         }
         
         .calendar-nav-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .calendar-filters {
+            display: flex;
+            gap: 12px;
+            margin-left: 20px;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .calendar-filter-select {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 150px;
+        }
+        
+        .calendar-filter-select option {
+            background: #2C3E50;
+            color: white;
+        }
+        
+        .calendar-filter-select:hover {
             background: rgba(255,255,255,0.2);
         }
         
@@ -530,8 +560,16 @@ function createWindow() {
             border-radius: 20px;
         }
         
+        .day-tasks-count.urgent {
+            background: #F39C12;
+        }
+        
         .day-tasks-count.overdue {
             background: #E74C3C;
+        }
+        
+        .day-tasks-count.completed {
+            background: #27AE60;
         }
         
         .day-tasks-preview {
@@ -570,6 +608,45 @@ function createWindow() {
             padding: 25px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
             overflow-y: auto;
+        }
+        
+        .calendar-stats {
+            background: #F8F9FA;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .calendar-stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #2C3E50;
+        }
+        
+        .calendar-stat-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .calendar-stat-label {
+            color: #7F8C8D;
+        }
+        
+        .calendar-stat-value {
+            font-weight: 600;
+        }
+        
+        .calendar-stat-value.high {
+            color: #E74C3C;
+        }
+        
+        .calendar-stat-value.medium {
+            color: #F39C12;
+        }
+        
+        .calendar-stat-value.low {
+            color: #27AE60;
         }
         
         .selected-date-title {
@@ -613,6 +690,11 @@ function createWindow() {
             border-left-color: #27AE60;
         }
         
+        .day-task-card.completed {
+            opacity: 0.7;
+            background: #F0F0F0;
+        }
+        
         .day-task-title {
             font-size: 16px;
             font-weight: 600;
@@ -623,6 +705,29 @@ function createWindow() {
         .day-task-time {
             font-size: 13px;
             color: #7F8C8D;
+        }
+        
+        .day-task-status {
+            font-size: 12px;
+            margin-top: 5px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        
+        .status-urgent {
+            background: #FFE5E5;
+            color: #E74C3C;
+        }
+        
+        .status-overdue {
+            background: #FFE5E5;
+            color: #E74C3C;
+        }
+        
+        .status-completed {
+            background: #E8F5E9;
+            color: #27AE60;
         }
         
         /* Основной контент */
@@ -1190,6 +1295,21 @@ function createWindow() {
                     <h2 id="calendarMonthTitle">Март 2024</h2>
                     <button class="calendar-nav-btn" id="calendarNextMonth">→</button>
                 </div>
+                <div class="calendar-filters">
+                    <select class="calendar-filter-select" id="calendarFilterType">
+                        <option value="active">Активные</option>
+                        <option value="completed">Выполненные</option>
+                        <option value="urgent">Горящие</option>
+                        <option value="overdue">Просроченные</option>
+                        <option value="all">Все задачи</option>
+                    </select>
+                    <select class="calendar-filter-select" id="calendarPriorityFilter">
+                        <option value="all">Все приоритеты</option>
+                        <option value="high">Высокий</option>
+                        <option value="medium">Средний</option>
+                        <option value="low">Низкий</option>
+                    </select>
+                </div>
                 <button class="calendar-close-btn" id="calendarCloseBtn">✕</button>
             </div>
             <div class="calendar-content">
@@ -1208,13 +1328,15 @@ function createWindow() {
                     </div>
                 </div>
                 <div class="calendar-sidebar" id="calendarSidebar">
+                    <div class="calendar-stats" id="calendarStats">
+                        <!-- Статистика по фильтру -->
+                    </div>
                     <div class="selected-date-title" id="selectedDateTitle">Выберите дату</div>
                     <div class="day-tasks-list" id="dayTasksList">
                         <!-- Задачи выбранного дня -->
                     </div>
                 </div>
             </div>
-            
         </div>
 
         <main class="main">
@@ -1374,6 +1496,8 @@ function createWindow() {
         let viewingTaskId = null;
         let calendarDate = new Date();
         let selectedCalendarDate = new Date();
+        let calendarFilterType = 'active';
+        let calendarPriorityFilter = 'all';
         
         // DOM элементы
         const tasksList = document.getElementById('tasksList');
@@ -1409,6 +1533,9 @@ function createWindow() {
         const fullscreenCalendarGrid = document.getElementById('fullscreenCalendarGrid');
         const selectedDateTitle = document.getElementById('selectedDateTitle');
         const dayTasksList = document.getElementById('dayTasksList');
+        const calendarFilterTypeSelect = document.getElementById('calendarFilterType');
+        const calendarPriorityFilterSelect = document.getElementById('calendarPriorityFilter');
+        const calendarStats = document.getElementById('calendarStats');
         
         // Функция для показа уведомлений
         function showNotification(title, message, type = 'error', duration = 5000) {
@@ -1503,6 +1630,16 @@ function createWindow() {
                 calendarDate.setMonth(calendarDate.getMonth() + 1);
                 renderFullscreenCalendar();
             });
+            
+            calendarFilterTypeSelect.addEventListener('change', () => {
+                calendarFilterType = calendarFilterTypeSelect.value;
+                renderFullscreenCalendar();
+            });
+            
+            calendarPriorityFilterSelect.addEventListener('change', () => {
+                calendarPriorityFilter = calendarPriorityFilterSelect.value;
+                renderFullscreenCalendar();
+            });
         }
         
         // Открытие календаря
@@ -1516,6 +1653,128 @@ function createWindow() {
         // Закрытие календаря
         function closeCalendar() {
             calendarFullscreen.classList.remove('show');
+        }
+        
+        // Получение отфильтрованных задач на дату
+        function getFilteredTasksForDate(date) {
+            const dateStr = formatDateKey(date);
+            
+            // Базовый фильтр по дате
+            let filteredTasks = tasks.filter(t => {
+                const taskDate = new Date(t.deadline);
+                return formatDateKey(taskDate) === dateStr;
+            });
+            
+            // Применяем фильтр по типу
+            switch (calendarFilterType) {
+                case 'active':
+                    filteredTasks = filteredTasks.filter(t => !t.completed);
+                    break;
+                case 'completed':
+                    filteredTasks = filteredTasks.filter(t => t.completed);
+                    break;
+                case 'urgent':
+                    filteredTasks = filteredTasks.filter(t => {
+                        if (t.completed) return false;
+                        const urgency = calculateUrgency(t);
+                        return urgency.urgent;
+                    });
+                    break;
+                case 'overdue':
+                    filteredTasks = filteredTasks.filter(t => {
+                        if (t.completed) return false;
+                        const urgency = calculateUrgency(t);
+                        return urgency.overdue;
+                    });
+                    break;
+                case 'all':
+                    // Все задачи, включая выполненные
+                    break;
+            }
+            
+            // Применяем фильтр по приоритету
+            if (calendarPriorityFilter !== 'all') {
+                filteredTasks = filteredTasks.filter(t => t.priority === calendarPriorityFilter);
+            }
+            
+            return filteredTasks;
+        }
+        
+        // Обновление статистики календаря
+        function updateCalendarStats() {
+            const month = calendarDate.getMonth();
+            const year = calendarDate.getFullYear();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            let totalTasks = 0;
+            let activeTasks = 0;
+            let completedTasks = 0;
+            let urgentTasks = 0;
+            let overdueTasks = 0;
+            let priorityCounts = { high: 0, medium: 0, low: 0 };
+            
+            // Собираем статистику за месяц
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayTasks = tasks.filter(t => {
+                    const taskDate = new Date(t.deadline);
+                    return formatDateKey(taskDate) === formatDateKey(date);
+                });
+                
+                dayTasks.forEach(t => {
+                    totalTasks++;
+                    if (!t.completed) activeTasks++;
+                    if (t.completed) completedTasks++;
+                    
+                    const urgency = calculateUrgency(t);
+                    if (!t.completed && urgency.urgent) urgentTasks++;
+                    if (!t.completed && urgency.overdue) overdueTasks++;
+                    
+                    if (t.priority) {
+                        priorityCounts[t.priority]++;
+                    }
+                });
+            }
+            
+            // Отображаем статистику
+            calendarStats.innerHTML = \`
+                <div class="calendar-stat-item">
+                    <span class="calendar-stat-label">Всего задач в месяце:</span>
+                    <span class="calendar-stat-value">\${totalTasks}</span>
+                </div>
+                <div class="calendar-stat-item">
+                    <span class="calendar-stat-label">Активных:</span>
+                    <span class="calendar-stat-value">\${activeTasks}</span>
+                </div>
+                <div class="calendar-stat-item">
+                    <span class="calendar-stat-label">Выполненных:</span>
+                    <span class="calendar-stat-value">\${completedTasks}</span>
+                </div>
+                <div class="calendar-stat-item">
+                    <span class="calendar-stat-label">Горящих:</span>
+                    <span class="calendar-stat-value urgent">\${urgentTasks}</span>
+                </div>
+                <div class="calendar-stat-item">
+                    <span class="calendar-stat-label">Просроченных:</span>
+                    <span class="calendar-stat-value overdue">\${overdueTasks}</span>
+                </div>
+                <div class="calendar-stat-item">
+                    <span class="calendar-stat-label">По приоритетам:</span>
+                    <span class="calendar-stat-value"></span>
+                </div>
+                <div class="calendar-stat-item" style="margin-left: 10px;">
+                    <span class="calendar-stat-label">🔴 Высокий:</span>
+                    <span class="calendar-stat-value high">\${priorityCounts.high}</span>
+                </div>
+                <div class="calendar-stat-item" style="margin-left: 10px;">
+                    <span class="calendar-stat-label">🟠 Средний:</span>
+                    <span class="calendar-stat-value medium">\${priorityCounts.medium}</span>
+                </div>
+                <div class="calendar-stat-item" style="margin-left: 10px;">
+                    <span class="calendar-stat-label">🟢 Низкий:</span>
+                    <span class="calendar-stat-value low">\${priorityCounts.low}</span>
+                </div>
+            \`;
         }
         
         // Отрисовка полноэкранного календаря
@@ -1551,11 +1810,9 @@ function createWindow() {
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const dateStr = formatDateKey(date);
-                const dayTasks = tasks.filter(t => {
-                    if (t.completed) return false;
-                    const taskDate = new Date(t.deadline);
-                    return formatDateKey(taskDate) === dateStr;
-                });
+                
+                // Фильтруем задачи в соответствии с выбранными фильтрами
+                const dayTasks = getFilteredTasksForDate(date);
                 
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'calendar-day';
@@ -1568,17 +1825,31 @@ function createWindow() {
                 
                 // Проверка на просроченные задачи
                 const hasOverdue = dayTasks.some(t => new Date(t.deadline) < new Date());
+                const hasUrgent = dayTasks.some(t => {
+                    if (t.completed) return false;
+                    const urgency = calculateUrgency(t);
+                    return urgency.urgent;
+                });
+                
+                // Определяем цвет счетчика в зависимости от фильтра
+                let countClass = '';
+                if (calendarFilterType === 'urgent') countClass = 'urgent';
+                else if (calendarFilterType === 'overdue') countClass = 'overdue';
+                else if (calendarFilterType === 'completed') countClass = 'completed';
+                else if (hasOverdue) countClass = 'overdue';
+                else if (hasUrgent) countClass = 'urgent';
                 
                 // Создаем превью задач (максимум 3)
                 const previewTasks = dayTasks.slice(0, 3).map(t => {
                     const priority = t.priority || 'medium';
-                    return \`<div class="preview-task-item \${priority}" title="\${escapeHtml(t.title)}">📌 \${escapeHtml(t.title)}</div>\`;
+                    const isCompleted = t.completed ? '✅ ' : '📌 ';
+                    return \`<div class="preview-task-item \${priority}" title="\${escapeHtml(t.title)}">\${isCompleted}\${escapeHtml(t.title)}</div>\`;
                 }).join('');
                 
                 dayDiv.innerHTML = \`
                     <div class="day-header">
                         <span class="day-number">\${day}</span>
-                        \${dayTasks.length > 0 ? \`<span class="day-tasks-count \${hasOverdue ? 'overdue' : ''}">\${dayTasks.length}</span>\` : ''}
+                        \${dayTasks.length > 0 ? \`<span class="day-tasks-count \${countClass}">\${dayTasks.length}</span>\` : ''}
                     </div>
                     <div class="day-tasks-preview">
                         \${previewTasks}
@@ -1592,6 +1863,9 @@ function createWindow() {
                 
                 fullscreenCalendarGrid.appendChild(dayDiv);
             }
+            
+            // Обновляем статистику календаря
+            updateCalendarStats();
             
             // Обновляем список задач для выбранного дня
             updateSelectedDayTasks();
@@ -1607,11 +1881,7 @@ function createWindow() {
         // Обновление списка задач для выбранного дня
         function updateSelectedDayTasks() {
             const dateStr = formatDateKey(selectedCalendarDate);
-            const dayTasks = tasks.filter(t => {
-                if (t.completed) return false;
-                const taskDate = new Date(t.deadline);
-                return formatDateKey(taskDate) === dateStr;
-            });
+            const dayTasks = getFilteredTasksForDate(selectedCalendarDate);
             
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             selectedDateTitle.textContent = selectedCalendarDate.toLocaleDateString('ru-RU', options);
@@ -1621,7 +1891,7 @@ function createWindow() {
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
                         <h3>Нет задач</h3>
-                        <p>На этот день нет запланированных задач</p>
+                        <p>На этот день нет задач по выбранным фильтрам</p>
                     </div>
                 \`;
                 return;
@@ -1636,14 +1906,28 @@ function createWindow() {
             
             sortedTasks.forEach(task => {
                 const taskCard = document.createElement('div');
-                taskCard.className = \`day-task-card \${task.priority || 'medium'}\`;
+                taskCard.className = \`day-task-card \${task.priority || 'medium'} \${task.completed ? 'completed' : ''}\`;
                 
                 const taskTime = new Date(task.deadline);
                 const timeStr = taskTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                 
+                // Определяем статус задачи
+                let statusHtml = '';
+                if (task.completed) {
+                    statusHtml = '<div class="day-task-status status-completed">✅ Выполнено</div>';
+                } else {
+                    const urgency = calculateUrgency(task);
+                    if (urgency.overdue) {
+                        statusHtml = '<div class="day-task-status status-overdue">⏰ Просрочено</div>';
+                    } else if (urgency.urgent) {
+                        statusHtml = '<div class="day-task-status status-urgent">🔥 Горит</div>';
+                    }
+                }
+                
                 taskCard.innerHTML = \`
                     <div class="day-task-title">\${escapeHtml(task.title)}</div>
                     <div class="day-task-time">⏰ \${timeStr}</div>
+                    \${statusHtml}
                 \`;
                 
                 taskCard.addEventListener('click', () => {
@@ -1754,7 +2038,7 @@ function createWindow() {
                     filteredTasks = tasks.filter(task => {
                         if (task.completed) return false;
                         const urgency = calculateUrgency(task);
-                        return urgency.urgent || urgency.overdue;
+                        return urgency.urgent;
                     });
                     break;
                 case 'deleted':
