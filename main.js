@@ -66,7 +66,8 @@ function createWindow() {
         },
         frame: true,
         titleBarStyle: 'default',
-        backgroundColor: '#F5F7FA'
+        backgroundColor: '#F5F7FA',
+        fullscreen: true // Открываем сразу в полноэкранном режиме
     });
 
     // Загружаем HTML прямо из строки
@@ -88,12 +89,15 @@ function createWindow() {
             background: #F5F7FA;
             color: #2C3E50;
             overflow: hidden;
+            height: 100vh;
+            width: 100vw;
         }
         
         .app {
             display: flex;
             flex-direction: column;
             height: 100vh;
+            width: 100vw;
         }
         
         /* Уведомления */
@@ -207,14 +211,18 @@ function createWindow() {
             color: white;
             padding: 16px 24px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding-left: 0; /* Добавить или изменить на нужное значение */
         }
 
+        /* Или более конкретно: */
         .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
             max-width: 1400px;
             margin: 0 auto;
+            width: 100%;
+            padding-left: 24px; /* Добавить отступ слева именно для контейнера, а не для хедера */
         }
 
         .logo {
@@ -225,12 +233,13 @@ function createWindow() {
             overflow: hidden;
             text-overflow: ellipsis;
             margin-right: auto;
+            margin-left: -24px; /* Компенсировать отступ родителя, если нужно */
         }
 
         .header-actions {
             display: flex;
             gap: 12px;
-            margin-left: auto;
+            margin-left: auto; /* Это уже есть, оставить */
         }
         
         .btn {
@@ -512,6 +521,7 @@ function createWindow() {
             flex-direction: column;
             min-height: 100px;
             border: 2px solid transparent;
+            position: relative;
         }
         
         .calendar-day:hover {
@@ -539,11 +549,41 @@ function createWindow() {
             box-shadow: none;
         }
         
+        .calendar-add-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3498DB;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border: none;
+            z-index: 10;
+        }
+        
+        .calendar-day:hover .calendar-add-btn {
+            opacity: 1;
+        }
+        
+        .calendar-add-btn:hover {
+            background: #2980B9;
+            transform: scale(1.1);
+        }
+        
         .day-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
+            padding-right: 25px;
         }
         
         .day-number {
@@ -600,7 +640,20 @@ function createWindow() {
         .preview-task-item.low {
             border-left-color: #27AE60;
         }
-        
+
+        /* Пустое состояние в правой панели календаря */
+        .calendar-sidebar .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            margin: 0;
+            padding: 20px;
+            width: 100%;
+            text-align: center;
+        }
+
         .calendar-sidebar {
             flex: 1;
             background: white;
@@ -658,6 +711,24 @@ function createWindow() {
             border-bottom: 2px solid #F0F0F0;
         }
         
+        .calendar-add-task-btn {
+            width: 100%;
+            padding: 12px;
+            background: #3498DB;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+        
+        .calendar-add-task-btn:hover {
+            background: #2980B9;
+        }
+        
         .day-tasks-list {
             display: flex;
             flex-direction: column;
@@ -671,6 +742,7 @@ function createWindow() {
             border-left: 4px solid transparent;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
         
         .day-task-card:hover {
@@ -790,7 +862,6 @@ function createWindow() {
             border-bottom-color: #95A5A6;
         }
         
-        /* Список задач */
         .tasks-list {
             flex: 1;
             overflow-y: auto;
@@ -799,6 +870,8 @@ function createWindow() {
             gap: 16px;
             align-content: start;
             padding-right: 8px;
+            position: relative; /* Добавить эту строку */
+            min-height: 400px;  /* Добавить эту строку */
         }
         
         .task-card {
@@ -986,7 +1059,7 @@ function createWindow() {
             background: rgba(0,0,0,0.5);
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 3000;
         }
         
         .modal.show {
@@ -1078,6 +1151,12 @@ function createWindow() {
             box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
         }
         
+        .form-group input:disabled {
+            background: #F5F5F5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
         .form-group textarea {
             resize: vertical;
             min-height: 80px;
@@ -1117,6 +1196,12 @@ function createWindow() {
             text-align: center;
             padding: 60px 20px;
             color: #95A5A6;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 500px;
         }
         
         .empty-state-icon {
@@ -1332,6 +1417,9 @@ function createWindow() {
                         <!-- Статистика по фильтру -->
                     </div>
                     <div class="selected-date-title" id="selectedDateTitle">Выберите дату</div>
+                    <button class="calendar-add-task-btn" id="calendarAddTaskBtn">
+                        ➕ Добавить задачу на выбранный день
+                    </button>
                     <div class="day-tasks-list" id="dayTasksList">
                         <!-- Задачи выбранного дня -->
                     </div>
@@ -1498,6 +1586,7 @@ function createWindow() {
         let selectedCalendarDate = new Date();
         let calendarFilterType = 'active';
         let calendarPriorityFilter = 'all';
+        let isFromCalendar = false;
         
         // DOM элементы
         const tasksList = document.getElementById('tasksList');
@@ -1536,6 +1625,7 @@ function createWindow() {
         const calendarFilterTypeSelect = document.getElementById('calendarFilterType');
         const calendarPriorityFilterSelect = document.getElementById('calendarPriorityFilter');
         const calendarStats = document.getElementById('calendarStats');
+        const calendarAddTaskBtn = document.getElementById('calendarAddTaskBtn');
         
         // Функция для показа уведомлений
         function showNotification(title, message, type = 'error', duration = 5000) {
@@ -1595,7 +1685,16 @@ function createWindow() {
         
         // Настройка обработчиков событий
         function setupEventListeners() {
-            newTaskBtn.addEventListener('click', openTaskModal);
+            newTaskBtn.addEventListener('click', () => {
+                isFromCalendar = false;
+                openTaskModal();
+            });
+            
+            calendarAddTaskBtn.addEventListener('click', () => {
+                isFromCalendar = true;
+                openTaskModal(selectedCalendarDate);
+            });
+            
             sortSelect.addEventListener('change', renderTasks);
             closeModalBtn.addEventListener('click', closeModal);
             cancelModalBtn.addEventListener('click', closeModal);
@@ -1839,6 +1938,9 @@ function createWindow() {
                 else if (hasOverdue) countClass = 'overdue';
                 else if (hasUrgent) countClass = 'urgent';
                 
+                // Кнопка добавления задачи
+                const addBtn = \`<button class="calendar-add-btn" data-date="\${dateStr}" title="Добавить задачу">➕</button>\`;
+                
                 // Создаем превью задач (максимум 3)
                 const previewTasks = dayTasks.slice(0, 3).map(t => {
                     const priority = t.priority || 'medium';
@@ -1851,15 +1953,31 @@ function createWindow() {
                         <span class="day-number">\${day}</span>
                         \${dayTasks.length > 0 ? \`<span class="day-tasks-count \${countClass}">\${dayTasks.length}</span>\` : ''}
                     </div>
+                    \${addBtn}
                     <div class="day-tasks-preview">
                         \${previewTasks}
                         \${dayTasks.length > 3 ? '<div class="preview-task-item">...</div>' : ''}
                     </div>
                 \`;
                 
-                dayDiv.addEventListener('click', () => {
+                // Обработчик клика по дню
+                dayDiv.addEventListener('click', (e) => {
+                    // Не обрабатываем клик, если кликнули на кнопку добавления
+                    if (e.target.classList.contains('calendar-add-btn')) {
+                        return;
+                    }
                     selectCalendarDay(date);
                 });
+                
+                // Обработчик для кнопки добавления
+                const addBtnElement = dayDiv.querySelector('.calendar-add-btn');
+                if (addBtnElement) {
+                    addBtnElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        isFromCalendar = true;
+                        openTaskModal(date);
+                    });
+                }
                 
                 fullscreenCalendarGrid.appendChild(dayDiv);
             }
@@ -1886,18 +2004,18 @@ function createWindow() {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             selectedDateTitle.textContent = selectedCalendarDate.toLocaleDateString('ru-RU', options);
             
+            dayTasksList.innerHTML = '';
+            
             if (dayTasks.length === 0) {
-                dayTasksList.innerHTML = \`
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <h3>Нет задач</h3>
-                        <p>На этот день нет задач по выбранным фильтрам</p>
-                    </div>
-                \`;
+                const emptyDiv = document.createElement('div');
+                emptyDiv.style.cssText = 'text-align: center; padding: 60px 20px 20px 20px; color: #7F8C8D; width: 100%;';
+                emptyDiv.innerHTML = 
+                    '<div style="font-size: 48px; margin-bottom: 15px;">📭</div>' +
+                    '<h3 style="font-size: 18px; margin-bottom: 8px; color: #7F8C8D;">Нет задач</h3>' +
+                    '<p style="font-size: 14px; color: #95A5A6;">На этот день нет задач по выбранным фильтрам</p>';
+                dayTasksList.appendChild(emptyDiv);
                 return;
             }
-            
-            dayTasksList.innerHTML = '';
             
             // Сортируем задачи по времени
             const sortedTasks = [...dayTasks].sort((a, b) => {
@@ -1906,7 +2024,7 @@ function createWindow() {
             
             sortedTasks.forEach(task => {
                 const taskCard = document.createElement('div');
-                taskCard.className = \`day-task-card \${task.priority || 'medium'} \${task.completed ? 'completed' : ''}\`;
+                taskCard.className = 'day-task-card ' + (task.priority || 'medium') + (task.completed ? ' completed' : '');
                 
                 const taskTime = new Date(task.deadline);
                 const timeStr = taskTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -1924,11 +2042,10 @@ function createWindow() {
                     }
                 }
                 
-                taskCard.innerHTML = \`
-                    <div class="day-task-title">\${escapeHtml(task.title)}</div>
-                    <div class="day-task-time">⏰ \${timeStr}</div>
-                    \${statusHtml}
-                \`;
+                taskCard.innerHTML = 
+                    '<div class="day-task-title">' + escapeHtml(task.title) + '</div>' +
+                    '<div class="day-task-time">⏰ ' + timeStr + '</div>' +
+                    statusHtml;
                 
                 taskCard.addEventListener('click', () => {
                     closeCalendar();
@@ -2406,12 +2523,28 @@ function createWindow() {
         }
         
         // Открытие модалки для новой задачи
-        function openTaskModal() {
+        function openTaskModal(selectedDate = null) {
             editingId = null;
             document.getElementById('modalTitle').textContent = '➕ Новая задача';
             document.getElementById('taskTitle').value = '';
             document.getElementById('taskDescription').value = '';
-            setDefaultDate();
+            
+            const taskDateInput = document.getElementById('taskDate');
+            
+            if (selectedDate) {
+                // Если передана конкретная дата (из календаря)
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                taskDateInput.value = year + '-' + month + '-' + day;
+                // Блокируем изменение даты при создании из календаря
+                taskDateInput.disabled = true;
+            } else {
+                // Если открыли с главной кнопки, ставим сегодня и дату можно менять
+                setDefaultDate();
+                taskDateInput.disabled = false;
+            }
+            
             document.getElementById('taskTime').value = '23:59';
             document.querySelector('input[name="priority"][value="medium"]').checked = true;
             taskModal.classList.add('show');
@@ -2434,11 +2567,12 @@ function createWindow() {
             const hours = String(deadline.getHours()).padStart(2, '0');
             const minutes = String(deadline.getMinutes()).padStart(2, '0');
             
-            document.getElementById('taskDate').value = \`\${year}-\${month}-\${day}\`;
-            document.getElementById('taskTime').value = \`\${hours}:\${minutes}\`;
+            document.getElementById('taskDate').value = year + '-' + month + '-' + day;
+            document.getElementById('taskDate').disabled = false; // При редактировании дату можно менять
+            document.getElementById('taskTime').value = hours + ':' + minutes;
             
             const priority = task.priority || 'medium';
-            document.querySelector(\`input[name="priority"][value="\${priority}"]\`).checked = true;
+            document.querySelector('input[name="priority"][value="' + priority + '"]').checked = true;
             
             taskModal.classList.add('show');
         }
@@ -2453,7 +2587,7 @@ function createWindow() {
             
             const date = document.getElementById('taskDate').value;
             const time = document.getElementById('taskTime').value;
-            const deadline = new Date(\`\${date}T\${time}\`);
+            const deadline = new Date(date + 'T' + time);
             
             const priority = document.querySelector('input[name="priority"]:checked').value;
             
@@ -2502,7 +2636,7 @@ function createWindow() {
                 saveTasksToFile();
                 renderTasks();
                 updateStatistics();
-                showNotification('Успех', \`Задача "\${task.title}" выполнена!\`, 'success', 3000);
+                showNotification('Успех', 'Задача "' + task.title + '" выполнена!', 'success', 3000);
                 if (calendarFullscreen.classList.contains('show')) {
                     renderFullscreenCalendar();
                 }
@@ -2529,7 +2663,7 @@ function createWindow() {
                     saveDeletedTasksToFile();
                     renderTasks();
                     updateStatistics();
-                    showNotification('Инфо', \`Задача "\${task.title}" перемещена в корзину\`, 'info', 3000);
+                    showNotification('Инфо', 'Задача "' + task.title + '" перемещена в корзину', 'info', 3000);
                     if (calendarFullscreen.classList.contains('show')) {
                         renderFullscreenCalendar();
                     }
@@ -2553,7 +2687,7 @@ function createWindow() {
                     saveDeletedTasksToFile();
                     renderTasks();
                     updateStatistics();
-                    showNotification('Успех', \`Задача "\${task.title}" полностью удалена\`, 'success', 3000);
+                    showNotification('Успех', 'Задача "' + task.title + '" полностью удалена', 'success', 3000);
                 }
                 closePermanentDeleteModal();
             }
@@ -2573,7 +2707,7 @@ function createWindow() {
                 saveDeletedTasksToFile();
                 renderTasks();
                 updateStatistics();
-                showNotification('Успех', \`Задача "\${task.title}" восстановлена\`, 'success', 3000);
+                showNotification('Успех', 'Задача "' + task.title + '" восстановлена', 'success', 3000);
                 if (calendarFullscreen.classList.contains('show')) {
                     renderFullscreenCalendar();
                 }
@@ -2592,13 +2726,19 @@ function createWindow() {
             saveDeletedTasksToFile();
             renderTasks();
             updateStatistics();
-            showNotification('Успех', \`Корзина очищена. Удалено \${count} задач\`, 'success', 3000);
+            showNotification('Успех', 'Корзина очищена. Удалено ' + count + ' задач', 'success', 3000);
             closeClearTrashModal();
         }
         
         // Закрытие модалок
         function closeModal() {
             taskModal.classList.remove('show');
+            // Сбрасываем disabled состояние для даты
+            document.getElementById('taskDate').disabled = false;
+            // Обновляем календарь, если он открыт
+            if (calendarFullscreen.classList.contains('show')) {
+                renderFullscreenCalendar();
+            }
         }
         
         function closeViewModal() {
@@ -2645,6 +2785,25 @@ function createWindow() {
                     }
                 }
             ]
+        },
+        {
+            label: 'Вид',
+            submenu: [
+                {
+                    label: 'Полноэкранный режим',
+                    accelerator: 'F11',
+                    click: () => {
+                        mainWindow.setFullScreen(!mainWindow.isFullScreen());
+                    }
+                },
+                {
+                    label: 'Открыть календарь',
+                    accelerator: 'CmdOrCtrl+K',
+                    click: () => {
+                        mainWindow.webContents.executeJavaScript('openCalendar()');
+                    }
+                }
+            ]
         }
     ];
 
@@ -2675,6 +2834,14 @@ function createWindow() {
 
     mainWindow.on('closed', () => {
         mainWindow = null;
+    });
+
+    // Добавляем обработчик для клавиши F11
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        if (input.key === 'F11') {
+            event.preventDefault();
+            mainWindow.setFullScreen(!mainWindow.isFullScreen());
+        }
     });
 }
 
